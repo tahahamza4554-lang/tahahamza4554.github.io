@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إيشيك IA</title>
+    <title>إيشيك IA - منصة التدريب واللعب الذكية</title>
 
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -30,7 +30,6 @@
             overflow-x: hidden;
         }
 
-        /* الهيدر مع زر القائمة الرئيسية */
         header {
             width: 100%;
             max-width: 480px;
@@ -55,7 +54,6 @@
             color: #4CAF50;
         }
 
-        /* تصميم القائمة الرئيسية الجانبية (Sidebar Menu) */
         .sidebar {
             position: fixed;
             top: 0;
@@ -72,9 +70,7 @@
             gap: 15px;
         }
 
-        .sidebar.active {
-            right: 0;
-        }
+        .sidebar.active { right: 0; }
 
         .sidebar-header {
             display: flex;
@@ -100,7 +96,7 @@
             border: 1px solid #333;
             cursor: pointer;
             text-align: right;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -112,7 +108,6 @@
             background: #2e4c30;
         }
 
-        /* خلفية ضبابية عند فتح القائمة */
         .overlay {
             position: fixed;
             top: 0;
@@ -124,9 +119,7 @@
             display: none;
         }
 
-        .overlay.active {
-            display: block;
-        }
+        .overlay.active { display: block; }
 
         .main-container {
             width: 100%;
@@ -152,7 +145,7 @@
 
         video {
             width: 100%;
-            height: 140px;
+            height: 130px;
             background-color: #1e1e1e;
             border: 2px solid #333;
             border-radius: 8px;
@@ -177,9 +170,7 @@
             outline: none;
         }
 
-        input[type="text"]:focus {
-            border-color: #4CAF50;
-        }
+        input[type="text"]:focus { border-color: #4CAF50; }
 
         .buttons-group {
             display: flex;
@@ -229,13 +220,16 @@
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3>القائمة الرئيسية</h3>
+            <h3>أنماط اللعب والتدريب</h3>
             <button class="close-btn" onclick="toggleMenu()">✕</button>
         </div>
-        <div class="menu-item active" id="menu-chess" onclick="selectGame('chess')">
-            <span>♟️</span> لعبة الشطرنج
+        <div class="menu-item active" id="menu-vs-ai" onclick="setMode('vs-ai')">
+            <span>🤖</span> اللعب ضد الذكاء الاصطناعي (متقدم)
         </div>
-        <div class="menu-item" id="menu-checkers" onclick="selectGame('checkers')">
+        <div class="menu-item" id="menu-chess-free" onclick="setMode('chess-free')">
+            <span>♟️</span> تحليل الشطرنج الحر
+        </div>
+        <div class="menu-item" id="menu-checkers" onclick="setMode('checkers')">
             <span>🔴</span> لعبة الداما
         </div>
         <div class="menu-item" onclick="resetGame(); toggleMenu();">
@@ -244,7 +238,6 @@
     </div>
 
     <div class="main-container">
-
         <div id="board"></div>
 
         <div class="media-section">
@@ -252,18 +245,17 @@
         </div>
 
         <div class="controls-section">
-            <input type="text" id="userTextInput" placeholder="اكتب سؤالك أو تحليلك هنا...">
+            <input type="text" id="userTextInput" placeholder="اسأل الذكاء الاصطناعي عن خطتك أو التكتيك...">
             
             <div class="buttons-group">
-                <button class="btn-action btn-send" onclick="askAI()">إرسال 🚀</button>
+                <button class="btn-action btn-send" onclick="askAI()">تحليل 🚀</button>
                 <button class="btn-action btn-mic" onclick="startSpeech()">الميكروفون 🎙️</button>
                 <button class="btn-action btn-reset" onclick="resetGame()">إعادة 🔄</button>
             </div>
         </div>
 
-        <div id="response-box">أهلاً بك في إيشيك IA! افتح القائمة لاختيار اللعبة وابدأ اللعب.</div>
-        
-        <div class="status-badge" id="statusBadge">الحالة: جاهز</div>
+        <div id="response-box">أهلاً بك في إيشيك IA! اختر نمط اللعب ضد الذكاء الاصطناعي وابدأ باللعب بالأبيض.</div>
+        <div class="status-badge" id="statusBadge">الحالة: دورك بالأبيض</div>
     </div>
 
     <script>
@@ -271,29 +263,30 @@
 
         var board = null;
         var game = new Chess();
-        var currentGame = 'chess';
+        var currentMode = 'vs-ai'; // النمط الافتراضي: اللعب ضد الذكاء الاصطناعي
 
-        // فتح وإغلاق القائمة الجانبية
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('active');
             document.getElementById('overlay').classList.toggle('active');
         }
 
-        // تحميل صور القطع
         function pieceTheme(piece) {
             return 'https://chessboardjs.com/img/chesspieces/wikipedia/' + piece + '.png';
         }
 
-        // اختيار اللعبة وتنظيف الرقعة
-        function selectGame(gameType) {
-            currentGame = gameType;
-            document.getElementById('menu-chess').classList.remove('active');
-            document.getElementById('menu-checkers').classList.remove('active');
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
-            if (gameType === 'chess') {
-                document.getElementById('menu-chess').classList.add('active');
+            if (mode === 'vs-ai') {
+                document.getElementById('menu-vs-ai').classList.add('active');
                 initChessBoard();
-            } else if (gameType === 'checkers') {
+                speakText("بدأت لعبة جديدة ضد الذكاء الاصطناعي المتقدم. دورك الآن بالأبيض.");
+            } else if (mode === 'chess-free') {
+                document.getElementById('menu-chess-free').classList.add('active');
+                initChessBoard();
+                speakText("نمط التحليل الحر للشطرنج.");
+            } else if (mode === 'checkers') {
                 document.getElementById('menu-checkers').classList.add('active');
                 initCheckersBoard();
             }
@@ -301,8 +294,12 @@
         }
 
         function onDragStart (source, piece, board, orientation) {
-            if (currentGame !== 'chess') return true;
+            if (currentMode === 'checkers') return true;
             if (game.game_over()) return false;
+            
+            // في نمط اللعب ضد الذكاء الاصطناعي، يمنع تحريك القطع السوداء (دور الذكاء الاصطناعي)
+            if (currentMode === 'vs-ai' && game.turn() === 'b') return false;
+
             if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
                 (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
                 return false;
@@ -310,7 +307,8 @@
         }
 
         function onDrop (source, target) {
-            if (currentGame !== 'chess') return;
+            if (currentMode === 'checkers') return;
+
             var move = game.move({
                 from: source,
                 to: target,
@@ -320,24 +318,58 @@
             if (move === null) return 'snapback';
 
             updateStatus();
-            speakText("تحركت القطعة من " + source + " إلى " + target);
+
+            // إذا كان النمط هو اللعب ضد الذكاء الاصطناعي وجاء دور الأسود
+            if (currentMode === 'vs-ai' && !game.game_over() && game.turn() === 'b') {
+                document.getElementById('statusBadge').innerText = "الحالة: تفكير الذكاء الاصطناعي...";
+                window.setTimeout(makeAIMove, 400);
+            }
+        }
+
+        // محرك الذكاء الاصطناعي المتقدم (Stockfish API) لحساب النقلة لـ الأسود
+        async function makeAIMove() {
+            const fen = encodeURIComponent(game.fen());
+            try {
+                const response = await fetch(`https://stockfish.online/api/s/v2.php?fen=${fen}&depth=10`);
+                const data = await response.json();
+                
+                if (data.success && data.bestmove) {
+                    const bestMove = data.bestmove.split(' ')[1]; // النقلة بصيغة e7e5
+                    const fromSquare = bestMove.substring(0, 2);
+                    const toSquare = bestMove.substring(2, 4);
+                    const promo = bestMove.length > 4 ? bestMove.substring(4, 5) : 'q';
+
+                    game.move({ from: fromSquare, to: toSquare, promotion: promo });
+                    board.position(game.fen());
+                    updateStatus();
+                }
+            } catch (err) {
+                // إذا تعذر الاتصال بالمحرك، نفذ نقلة عشوائية كخيار احتياطي
+                var moves = game.moves();
+                var randomMove = moves[Math.floor(Math.random() * moves.length)];
+                game.move(randomMove);
+                board.position(game.fen());
+                updateStatus();
+            }
         }
 
         function onSnapEnd () {
-            if (currentGame === 'chess') {
+            if (currentMode !== 'checkers') {
                 board.position(game.fen());
             }
         }
 
         function updateStatus () {
-            if (currentGame !== 'chess') return;
+            if (currentMode === 'checkers') return;
             var status = '';
-            var moveColor = game.turn() === 'w' ? 'الأبيض' : 'الأسود';
+            var moveColor = game.turn() === 'w' ? 'الأبيض (دورك)' : 'الأسود (إيشيك IA)';
 
             if (game.in_checkmate()) {
-                status = 'انتهت اللعبة، كش مات لصالح ' + moveColor;
+                status = 'انتهت اللعبة! كش مات لصالح ' + (game.turn() === 'w' ? 'الأسود' : 'الأبيض');
+                speakText(status);
             } else if (game.in_draw()) {
-                status = 'انتهت اللعبة تعادل';
+                status = 'انتهت اللعبة بالتعادل';
+                speakText(status);
             } else {
                 status = 'الدور على: ' + moveColor;
                 if (game.in_check()) status += ' (كش ملك!)';
@@ -357,7 +389,6 @@
                 onSnapEnd: onSnapEnd
             });
             updateStatus();
-            speakText("تم التغيير إلى لعبة الشطرنج.");
         }
 
         function initCheckersBoard() {
@@ -378,27 +409,26 @@
         }
 
         function resetGame() {
-            if (currentGame === 'chess') {
-                initChessBoard();
-            } else {
+            if (currentMode === 'checkers') {
                 initCheckersBoard();
+            } else {
+                initChessBoard();
             }
         }
 
         initChessBoard();
 
-        // تفعيل الكاميرا والميكروفون
+        // تفعيل وسائل الإعلام
         async function initMediaDevices() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
                 document.getElementById('webcam').srcObject = stream;
             } catch (err) {
-                console.error("خطأ وسائل الإعلام: ", err);
+                console.error("خطأ الكاميرا/الميكروفون: ", err);
             }
         }
         window.addEventListener('load', initMediaDevices);
 
-        // التعرف الصوتي
         function startSpeech() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -414,7 +444,6 @@
             };
         }
 
-        // تحويل النص لصوت
         function speakText(text) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -424,15 +453,15 @@
             }
         }
 
-        // طلب الذكاء الاصطناعي
+        // تحليل الشطرنج والنقلات عبر Groq Llama-3
         async function askAI() {
             const userInput = document.getElementById('userTextInput').value.trim();
             const responseBox = document.getElementById('response-box');
 
-            responseBox.innerText = "جاري التحليل...";
+            responseBox.innerText = "جاري التحليل والتقييم...";
 
-            const currentFen = currentGame === 'chess' ? game.fen() : 'وضع الداما';
-            const promptText = `أنت مساعد ومحلل ذكي باسم "إيشيك IA" في لعبة ${currentGame === 'chess' ? 'الشطرنج' : 'الداما'}. وضع الرقعة: ${currentFen}. السؤال: ${userInput || 'حلل لي هذا الموقف'}. أجب باختصار باللغة العربية.`;
+            const currentFen = currentMode !== 'checkers' ? game.fen() : 'وضع الداما';
+            const promptText = `أنت مدرب شطرنج محترف يسمى "إيشيك IA". الوضع الحالي للرقعة بترميز FEN هو: ${currentFen}. سؤال اللاعب: ${userInput || 'حلل لي أفضل خطة في هذا الموقف وقيّم الوضع'}. قدم نصيحة تكتيكية تعليمية قصيرة ومفيدة باللغة العربية.`;
 
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -452,7 +481,7 @@
                 responseBox.innerText = reply;
                 speakText(reply);
             } catch (err) {
-                responseBox.innerText = "حدث خطأ في الاتصال بالذكاء الاصطناعي.";
+                responseBox.innerText = "حدث خطأ أثناء الاتصال بالذكاء الاصطناعي.";
             }
         }
     </script>
